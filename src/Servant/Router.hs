@@ -31,8 +31,8 @@ import           Web.HttpApiData
 data View
 
 instance HasLink View where
-  type MkLink View = MkLink (Get '[] ())
-  toLink _ = toLink (Proxy :: Proxy (Get '[] ()))
+  type MkLink View a = MkLink (Get '[] ()) a
+  toLink f _ = toLink f (Proxy :: Proxy (Get '[] ()))
 
 -- | When routing, the router may fail to match a location.
 -- Either this is an unrecoverable failure,
@@ -175,7 +175,7 @@ routeQueryAndPath queries pathSegs r = case r of
   RQueryParams sym f ->
     maybe (return $ Left FailFatal) (routeQueryAndPath queries pathSegs . f) $ do
       ps <- sequence $ snd <$> filter (\(k, _) -> k == BS.pack (symbolVal sym)) queries
-      sequence $ (parseQueryParamMaybe . decodeUtf8) <$> ps
+      sequence $ parseQueryParamMaybe . decodeUtf8 <$> ps
   RQueryFlag sym f -> case lookup (BS.pack $ symbolVal sym) queries of
     Nothing       -> routeQueryAndPath queries pathSegs $ f False
     Just Nothing  -> routeQueryAndPath queries pathSegs $ f True
